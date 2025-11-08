@@ -3,9 +3,19 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>Sistema_de_Gestion_Universitaria</RootNamespace>
+	  
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+
+	  <RootNamespace>string</RootNamespace>
+	  <AssemblyName>Sistema_Gestion_Universitaria</AssemblyName>
+
+	  <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
+	<ItemGroup>
+		
+	</ItemGroup>
 
 </Project>

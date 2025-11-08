@@ -6,9 +6,9 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static Sistema_de_Gestion_Universitaria.Validation.AtributoValidacion;
+using static Sistema_Gestion_Universitaria.Validation.AtributoValidacion;
 
-namespace Sistema_de_Gestion_Universitaria.Validation
+namespace Sistema_Gestion_Universitaria.Validation
 {
     public static class Validador
     {
@@ -25,7 +25,7 @@ namespace Sistema_de_Gestion_Universitaria.Validation
                 var valor = p.GetValue(instancia);
                 var nombreProp = $"{tipo.Name}.{p.Name}";
 
-                // [Requerido]
+                // Requerido
                 var req = p.GetCustomAttribute<AtributoValidacion>();
                 if (req != null)
                 {
@@ -36,7 +36,7 @@ namespace Sistema_de_Gestion_Universitaria.Validation
                     }
                 }
 
-                // [ValidacionRango]
+                // validacionRango
                 var rango = p.GetCustomAttribute<ValidacionRangoAttribute>();
                 if (rango != null && valor != null)
                 {
@@ -52,7 +52,7 @@ namespace Sistema_de_Gestion_Universitaria.Validation
                     }
                 }
 
-                // [Formato]
+                //Formato
                 var formato = p.GetCustomAttribute<FormatoAttribute>();
                 if (formato != null && valor != null)
                 {

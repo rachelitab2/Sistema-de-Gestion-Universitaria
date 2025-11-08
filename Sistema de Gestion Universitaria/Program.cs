@@ -1,23 +1,26 @@
 ﻿using System;
-using Sistema_de_Gestion_Universitaria.Clases;
-using Sistema_de_Gestion_Universitaria.Validation;
+using System.Linq;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using Sistema_Gestion_Universitaria.Validation;
 
-namespace Sistema_de_Gestion_Universitaria
+namespace Sistema_Gestion_Universitaria.Clases
 {
     internal class Program
     {
-        static Repositorio<Estudiante> repoEstudiante = new Repositorio<Estudiante>();
-        static Repositorio<Profesor> repoProfesor = new Repositorio<Profesor>();
-        static Repositorio<Curso> repoCurso = new Repositorio<Curso>();
-        static GestorMatriculas gestor = new GestorMatriculas(repoEstudiante, repoCurso);
+        static Repositorio<Estudiante> repoEstudiantes = new Repositorio<Estudiante>();
+        static Repositorio<Profesor> repoProfesores = new Repositorio<Profesor>();
+        static Repositorio<Curso> repoCursos = new Repositorio<Curso>();
+        static GestorMatriculas gestor = new GestorMatriculas(repoEstudiantes, repoProfesores, repoCursos);
+
 
 
         static void Main(string[] args)
         {
             Console.Title = "Sistema de Gestion Universitaria";
-
-            GenerarDatosPrueba();
-            DemostrarFuncionalidades();
+        
+           
 
             MenuPrincipal();
         }
@@ -107,7 +110,7 @@ namespace Sistema_de_Gestion_Universitaria
             }
         }
 
-        // ==== Menú Principal ====
+        //  Menu Principal
         static void MenuPrincipal()
         {
             while (true)
@@ -307,6 +310,284 @@ namespace Sistema_de_Gestion_Universitaria
             gestor.AgregarCalificacion(idEst, codCur, cal);
             SetOk("Calificación registrada.");
         }
+
+        // ==== Submenú Profesores ====
+
+        static void MenuProfesores()
+        {
+            while (true)
+            {
+                Console.Clear();
+                SetInfo("=== Profesores ===");
+                Console.WriteLine("1) Agregar");
+                Console.WriteLine("2) Listar");
+                Console.WriteLine("3) Buscar por ID");
+                Console.WriteLine("4) Modificar");
+                Console.WriteLine("5) Eliminar");
+                Console.WriteLine("0) Volver");
+                var op = ReadInt("Opción: ", 0, 5);
+
+                if (op == 0) return;
+
+                try
+                {
+                    switch (op)
+                    {
+                        case 1: ProfesorAgregar(); break;
+                        case 2: ProfesorListar(); break;
+                        case 3: ProfesorBuscar(); break;
+                        case 4: ProfesorModificar(); break;
+                        case 5: ProfesorEliminar(); break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SetError($"Error: {ex.Message}");
+                }
+
+                Console.WriteLine("Presiona una tecla para continuar...");
+                Console.ReadKey();
+            }
+        }
+
+        static void ProfesorAgregar()
+        {
+            Console.Clear();
+            SetInfo("Agregar Profesor");
+            var id = ReadNonEmpty("Identificación: ");
+            var nombre = ReadNonEmpty("Nombre: ");
+            var apellido = ReadNonEmpty("Apellido: ");
+            var fecha = ReadDate("Fecha nacimiento (YYYY-MM-DD): ");
+            var depto = ReadNonEmpty("Departamento: ");
+
+            Console.WriteLine("Tipo de contrato: 1) TiempoCompleto  2) MedioTiempo  3) Adjunto");
+            var tipoSel = ReadInt("Opción: ", 1, 3);
+            var tipo = tipoSel == 1 ? TipoContrato.TiempoCompleto : tipoSel == 2 ? TipoContrato.MedioTiempo : TipoContrato.Adjunto;
+
+            var salario = ReadDecimal("Salario base (>0): ", 1m, 1000000m);
+
+            var prof = new Profesor
+            {
+                Identificacion = id,
+                Nombre = nombre,
+                Apellido = apellido,
+                FechaNacimiento = fecha,
+                Departamento = depto,
+                TipoContrato = tipo,
+                SalarioBase = salario
+            };
+
+            var errores = Validador.Validar(prof);
+            if (errores.Any())
+            {
+                SetWarn("No se puede agregar. Errores:");
+                foreach (var e in errores) Console.WriteLine("- " + e);
+                return;
+            }
+
+            repoProfesores.Agregar(prof);
+            SetOk("Profesor agregado.");
+        }
+
+        static void ProfesorListar()
+        {
+            Console.Clear();
+            SetInfo("Listado de Profesores");
+            var todos = repoProfesores.ObtenerTodos();
+            if (todos.Count == 0) { SetWarn("No hay profesores."); return; }
+            foreach (var p in todos) Console.WriteLine(p.ToString());
+        }
+
+        static void ProfesorBuscar()
+        {
+            Console.Clear();
+            var id = ReadNonEmpty("ID del profesor: ");
+            var p = repoProfesores.BuscarPorId(id);
+            if (p == null) { SetWarn("No encontrado."); return; }
+            Console.WriteLine(p.ToString());
+        }
+
+        static void ProfesorModificar()
+        {
+            Console.Clear();
+            var id = ReadNonEmpty("ID del profesor a modificar: ");
+            var p = repoProfesores.BuscarPorId(id);
+            if (p == null) { SetWarn("No encontrado."); return; }
+
+            SetInfo("Deja vacío para mantener el valor actual.");
+            Console.Write($"Nombre ({p.Nombre}): ");
+            var nombre = Console.ReadLine();
+            Console.Write($"Apellido ({p.Apellido}): ");
+            var apellido = Console.ReadLine();
+            Console.Write($"Departamento ({p.Departamento}): ");
+            var depto = Console.ReadLine();
+            Console.WriteLine($"TipoContrato actual: {p.TipoContrato}. Cambiar? 1) TiempoCompleto  2) MedioTiempo  3) Adjunto  0) Mantener");
+            var tipoSel = ReadInt("Opción: ", 0, 3);
+            Console.Write($"SalarioBase ({p.SalarioBase}): ");
+            var s = Console.ReadLine();
+
+            if (!string.IsNullOrWhiteSpace(nombre)) p.Nombre = nombre.Trim();
+            if (!string.IsNullOrWhiteSpace(apellido)) p.Apellido = apellido.Trim();
+            if (!string.IsNullOrWhiteSpace(depto)) p.Departamento = depto.Trim();
+            if (tipoSel != 0)
+                p.TipoContrato = tipoSel == 1 ? TipoContrato.TiempoCompleto : tipoSel == 2 ? TipoContrato.MedioTiempo : TipoContrato.Adjunto;
+            if (!string.IsNullOrWhiteSpace(s) && decimal.TryParse(s, out var sal) && sal > 0) p.SalarioBase = sal;
+
+            var errores = Validador.Validar(p);
+            if (errores.Any())
+            {
+                SetWarn("Cambios inválidos:");
+                foreach (var err in errores) Console.WriteLine("- " + err);
+                return;
+            }
+
+            SetOk("Profesor modificado.");
+        }
+
+        static void ProfesorEliminar()
+        {
+            Console.Clear();
+            var id = ReadNonEmpty("ID del profesor a eliminar: ");
+            repoProfesores.Eliminar(id);
+            SetOk("Profesor eliminado.");
+        }
+
+        // ==== Submenú Cursos ====
+        static void MenuCursos()
+        {
+            while (true)
+            {
+                Console.Clear();
+                SetInfo("=== Cursos ===");
+                Console.WriteLine("1) Agregar");
+                Console.WriteLine("2) Listar");
+                Console.WriteLine("3) Buscar por Código");
+                Console.WriteLine("4) Modificar");
+                Console.WriteLine("5) Eliminar");
+                Console.WriteLine("6) Asignar Profesor");
+                Console.WriteLine("0) Volver");
+                var op = ReadInt("Opción: ", 0, 6);
+
+                if (op == 0) return;
+
+                try
+                {
+                    switch (op)
+                    {
+                        case 1: CursoAgregar(); break;
+                        case 2: CursoListar(); break;
+                        case 3: CursoBuscar(); break;
+                        case 4: CursoModificar(); break;
+                        case 5: CursoEliminar(); break;
+                        case 6: CursoAsignarProfesor(); break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SetError($"Error: {ex.Message}");
+                }
+
+                Console.WriteLine("Presiona una tecla para continuar...");
+                Console.ReadKey();
+            }
+        }
+
+        static void CursoAgregar()
+        {
+            Console.Clear();
+            SetInfo("Agregar Curso");
+            var codigo = ReadNonEmpty("Código: ");
+            var nombre = ReadNonEmpty("Nombre: ");
+            var creditos = ReadInt("Créditos (1..30): ", 1, 30);
+
+            var curso = new Curso { Codigo = codigo, Nombre = nombre, Credito = creditos };
+
+            var errores = Validador.Validar(curso);
+            if (errores.Any())
+            {
+                SetWarn("No se puede agregar. Errores:");
+                foreach (var e in errores) Console.WriteLine("- " + e);
+                return;
+            }
+
+            repoCursos.Agregar(curso);
+            SetOk("Curso agregado.");
+        }
+
+        static void CursoListar()
+        {
+            Console.Clear();
+            SetInfo("Listado de Cursos");
+            var todos = repoCursos.ObtenerTodos();
+            if (todos.Count == 0) { SetWarn("No hay cursos."); return; }
+            foreach (var c in todos) Console.WriteLine(c.ToString());
+        }
+
+        static void CursoBuscar()
+        {
+            Console.Clear();
+            var codigo = ReadNonEmpty("Código del curso: ");
+            var c = repoCursos.BuscarPorId(codigo);
+            if (c == null) { SetWarn("No encontrado."); return; }
+            Console.WriteLine(c.ToString());
+        }
+
+        static void CursoModificar()
+        {
+            Console.Clear();
+            var codigo = ReadNonEmpty("Código del curso a modificar: ");
+            var c = repoCursos.BuscarPorId(codigo);
+            if (c == null) { SetWarn("No encontrado."); return; }
+
+            SetInfo("Deja vacío para mantener el valor actual.");
+            Console.Write($"Nombre ({c.Nombre}): ");
+            var nombre = Console.ReadLine();
+            Console.Write($"Créditos ({c.Credito}): ");
+            var sCred = Console.ReadLine();
+
+            if (!string.IsNullOrWhiteSpace(nombre)) c.Nombre = nombre.Trim();
+            if (!string.IsNullOrWhiteSpace(sCred) && int.TryParse(sCred, out var cr) && cr >= 1 && cr <= 30) c.Credito = cr;
+
+            var errores = Validador.Validar(c);
+            if (errores.Any())
+            {
+                SetWarn("Cambios inválidos:");
+                foreach (var err in errores) Console.WriteLine("- " + err);
+                return;
+            }
+
+            SetOk("Curso modificado.");
+        }
+
+        static void CursoEliminar()
+        {
+            Console.Clear();
+            var codigo = ReadNonEmpty("Código del curso a eliminar: ");
+            repoCursos.Eliminar(codigo);
+            SetOk("Curso eliminado.");
+        }
+
+        static void CursoAsignarProfesor()
+        {
+            Console.Clear();
+            SetInfo("Asignar Profesor a Curso");
+            var codigo = ReadNonEmpty("Código del curso: ");
+            var c = repoCursos.BuscarPorId(codigo);
+            if (c == null) { SetWarn("Curso no existe."); return; }
+
+            var profesores = repoProfesores.ObtenerTodos();
+            if (profesores.Count == 0) { SetWarn("No hay profesores para asignar."); return; }
+
+            Console.WriteLine("Profesores disponibles:");
+            foreach (var p in profesores) Console.WriteLine($"- {p.Identificacion}: {p.Nombre} {p.Apellido}");
+
+            var idProf = ReadNonEmpty("ID del profesor a asignar: ");
+            var prof = repoProfesores.BuscarPorId(idProf);
+            if (prof == null) { SetWarn("Profesor no existe."); return; }
+
+            c.ProfesorAsignado = prof;
+            SetOk($"Profesor {prof.Nombre} asignado al curso {c.Nombre}.");
+        }
         // ==== Reportes y estadísticas ====
         static void MenuReportes()
         {
@@ -352,7 +633,7 @@ namespace Sistema_de_Gestion_Universitaria
                             var pop = gestor.ObtenerCursosMasPopulares();
                             SetInfo("Cursos más populares:");
                             foreach (var c in pop)
-                                Console.WriteLine($"{c.Curso.Codigo} - {c.Curso.Nombre}: {c.Cantidad} estudiantes");
+                                Console.WriteLine($"{c.Curso.Codigo} - {c.Curso.Nombre}: {c.CantidadEstudiantes} estudiantes");
                             break;
 
                         case 5:
@@ -410,171 +691,6 @@ namespace Sistema_de_Gestion_Universitaria
             Console.ReadKey();
         }
 
-        static void GenerarDatosPrueba()
-        {
-            var rnd = new Random(123);
-
-            var profs = new List<Profesor>
-    {
-        new Profesor { Identificacion = "PROF-001", Nombre = "Marta", Apellido = "Suárez", FechaNacimiento = new DateTime(1980,3,5), Departamento = "Computación", TipoContrato = TipoContrato.TiempoCompleto, SalarioBase = 45000m },
-        new Profesor { Identificacion = "PROF-002", Nombre = "Luis", Apellido = "Pérez", FechaNacimiento = new DateTime(1978,7,21), Departamento = "Matemáticas", TipoContrato = TipoContrato.MedioTiempo, SalarioBase = 30000m },
-        new Profesor { Identificacion = "PROF-003", Nombre = "Sara", Apellido = "Gil", FechaNacimiento = new DateTime(1982,10,10), Departamento = "Física", TipoContrato = TipoContrato.TiempoCompleto, SalarioBase = 42000m },
-        new Profesor { Identificacion = "PROF-004", Nombre = "Carlos", Apellido = "Lora", FechaNacimiento = new DateTime(1975,1,15), Departamento = "Química", TipoContrato = TipoContrato.Adjunto, SalarioBase = 20000m },
-        new Profesor { Identificacion = "PROF-005", Nombre = "Elena", Apellido = "Vargas", FechaNacimiento = new DateTime(1983,12,2), Departamento = "Derecho", TipoContrato = TipoContrato.TiempoCompleto, SalarioBase = 50000m },
-    };
-            foreach (var p in profs) repoProfesores.Agregar(p);
-
-            var cursos = new List<Curso>
-    {
-        new Curso("INF-101","Programación I",4, profs[0]),
-        new Curso("INF-102","Programación II",4, profs[0]),
-        new Curso("MAT-101","Cálculo I",4, profs[1]),
-        new Curso("MAT-102","Álgebra",3, profs[1]),
-        new Curso("FIS-101","Física I",4, profs[2]),
-        new Curso("QUI-101","Química I",4, profs[3]),
-        new Curso("DER-101","Introducción al Derecho",3, profs[4]),
-        new Curso("INF-201","Estructuras de Datos",4, profs[0]),
-        new Curso("INF-202","Bases de Datos",4, profs[0]),
-        new Curso("INF-203","Ingeniería de Software",3, profs[0]),
-    };
-            foreach (var c in cursos) repoCursos.Agregar(c);
-
-            var carreras = new[] { "Informática", "Derecho", "Matemáticas", "Física", "Química" };
-            var nombres = new[] { "Ana", "Luis", "Carlos", "María", "Elena", "Jorge", "Lucía", "Pedro", "Daniela", "Sofía", "Raúl", "Carmen", "Iván", "Noelia", "Tomás" };
-            var apellidos = new[] { "Gómez", "Pérez", "Linares", "Suárez", "Mejía", "Vargas", "Lora", "Núñez", "Gil", "Torres", "Mena", "Silva", "Rojas", "Acosta", "Santos" };
-
-            for (int i = 0; i < 15; i++)
-            {
-                var nombre = nombres[i % nombres.Length];
-                var apellido = apellidos[i % apellidos.Length];
-                var carrera = carreras[i % carreras.Length];
-                var year = 1999 + rnd.Next(0, 6);
-                var mes = rnd.Next(1, 13);
-                var dia = rnd.Next(1, 28);
-                var est = new Estudiante
-                {
-                    Identificacion = $"EST-{(i + 1).ToString("000")}",
-                    Nombre = nombre,
-                    Apellido = apellido,
-                    FechaNacimiento = new DateTime(year, mes, dia),
-                    Carrera = carrera,
-                    NumeroMatricula = $"2025-{(1000 + i).ToString("0000")}"
-                };
-                repoEstudiantes.Agregar(est);
-            }
-
-            int matriculasCreadas = 0;
-            int intentos = 0;
-            var estudiantes = repoEstudiantes.ObtenerTodos();
-
-            while (matriculasCreadas < 30 && intentos < 200)
-            {
-                intentos++;
-                var est = estudiantes[rnd.Next(estudiantes.Count)];
-                var cur = cursos[rnd.Next(cursos.Count)];
-
-                try
-                {
-                    gestor.MatricularEstudiante(est, cur);
-
-                    int notas = 3 + rnd.Next(2);
-                    for (int k = 0; k < notas; k++)
-                    {
-                        var nota = Math.Round((decimal)(6.0 + rnd.NextDouble() * 4.0), 2);
-                        if (nota > 10m) nota = 10m;
-                        gestor.AgregarCalificacion(est.Identificacion, cur.Codigo, nota);
-                    }
-
-                    matriculasCreadas++;
-                }
-                catch
-                {
-                }
-            }
-        }
-
-        static void DemostrarFuncionalidades()
-        {
-            SetInfo("Demostración automática de funcionalidades");
-
-            var top10 = gestor.ObtenerTop10Estudiantes();
-            Console.WriteLine("Top 10 Estudiantes:");
-            foreach (var x in top10)
-                Console.WriteLine($"{x.Estudiante.Identificacion} - {x.Estudiante.Nombre} {x.Estudiante.Apellido} - {x.Promedio:0.00}");
-
-            var riesgo = gestor.ObtenerEstudiantesEnRiesgo();
-            Console.WriteLine("Estudiantes en Riesgo (<7.0):");
-            foreach (var x in riesgo)
-                Console.WriteLine($"{x.Estudiante.Identificacion} - {x.Estudiante.Nombre} {x.Estudiante.Apellido} - {x.Promedio:0.00}");
-
-            var populares = gestor.ObtenerCursosMasPopulares();
-            Console.WriteLine("Cursos más Populares:");
-            foreach (var c in populares)
-                Console.WriteLine($"{c.Curso.Codigo} - {c.Curso.Nombre}: {c.Cantidad}");
-
-            var promGeneral = gestor.ObtenerPromedioGeneral();
-            Console.WriteLine($"Promedio General del Sistema: {promGeneral:0.00}");
-
-            var statsCarrera = gestor.ObtenerEstadisticasPorCarrera();
-            Console.WriteLine("Estadísticas por Carrera:");
-            foreach (var s in statsCarrera)
-                Console.WriteLine($"{s.Carrera}: {s.Cantidad} est. | Prom: {s.PromedioGeneral:0.00}");
-
-            var alguno = repoEstudiantes.ObtenerTodos().FirstOrDefault();
-            if (alguno != null)
-            {
-                Console.WriteLine();
-                Console.WriteLine("Reporte de un estudiante al azar:");
-                Console.WriteLine(gestor.GenerarReporteEstudiante(alguno.Identificacion));
-            }
-
-            Console.WriteLine();
-            Console.WriteLine("Reflection sobre Estudiante:");
-            Console.WriteLine(AnalizadorReflection.MostrarPropiedades(typeof(Estudiante)));
-            Console.WriteLine(AnalizadorReflection.MostrarMetodos(typeof(Estudiante)));
-
-            var e = AnalizadorReflection.CrearInstanciaDinamica(
-                typeof(Estudiante),
-                "EST-999", "Lia", "Torres", new DateTime(2004, 4, 12), "Informática", "2025-0999"
-            );
-            Console.WriteLine("Instancia Estudiante creada dinámicamente:");
-            Console.WriteLine(e);
-            var rol = AnalizadorReflection.InvocarMetodo(e, "ObtenerRol");
-            Console.WriteLine($"Rol por reflection: {rol}");
-
-            Console.WriteLine();
-            Console.WriteLine("Validación con atributos (caso con errores):");
-            var estBad = new Estudiante
-            {
-                Identificacion = "EST-300",
-                Nombre = "Joan",
-                Apellido = "Mejía",
-                FechaNacimiento = new DateTime(2006, 5, 10),
-                Carrera = "",
-                NumeroMatricula = "25-001"
-            };
-            var erroresEst = Validador.Validar(estBad);
-            foreach (var err in erroresEst) Console.WriteLine("- " + err);
-
-            Console.WriteLine();
-            Console.WriteLine("Boxing/Unboxing y Conversiones:");
-            decimal nota = 8.75m;
-            object caja = nota;
-            decimal nota2 = (decimal)caja;
-            Console.WriteLine($"Boxing/Unboxing - Original: {nota}, Recuperado: {nota2}");
-
-            Console.WriteLine(Utilidades.ConvertirDatos(123));
-            Console.WriteLine(Utilidades.ConvertirDatos(3.14159));
-            Console.WriteLine(Utilidades.ConvertirDatos(42.5m));
-            Console.WriteLine(Utilidades.ConvertirDatos("Hola"));
-            Console.WriteLine(Utilidades.ConvertirDatos(""));
-            Console.WriteLine(Utilidades.ConvertirDatos(DateTime.Today));
-            Console.WriteLine(Utilidades.ConvertirDatos(true));
-
-            Console.WriteLine();
-            Console.WriteLine("Fin de demostración. Presiona una tecla para ir al menú...");
-            Console.ReadKey();
-        }
     }
 }
 

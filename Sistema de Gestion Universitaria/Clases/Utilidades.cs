@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Sistema_de_Gestion_Universitaria.Clases
+namespace Sistema_Gestion_Universitaria.Clases
 {
     public static class Utilidades
     {

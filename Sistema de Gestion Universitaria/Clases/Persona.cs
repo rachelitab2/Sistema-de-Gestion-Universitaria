@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace Sistema_de_Gestion_Universitaria.Clases
+namespace Sistema_Gestion_Universitaria.Clases
 {
     public abstract class Persona
     {
@@ -15,7 +15,7 @@ namespace Sistema_de_Gestion_Universitaria.Clases
         public DateTime FechaNacimiento { get; set; }
 
 
-        public string _indentificacion
+        public string _identificacion
         {
             get => Identificacion;
             set

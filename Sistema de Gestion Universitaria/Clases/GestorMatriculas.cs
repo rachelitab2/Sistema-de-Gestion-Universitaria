@@ -6,12 +6,11 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
 using System.Reflection;
 
-namespace Sistema_de_Gestion_Universitaria.Clases
+namespace Sistema_Gestion_Universitaria.Clases
 {
     public class GestorMatriculas
     {
         private readonly List<Matricula> _matriculas = new List<Matricula>();
-
         private readonly Repositorio<Estudiante> _repoEstudiantes;
         private readonly Repositorio<Profesor> _repoProfesores;
         private readonly Repositorio<Curso> _repoCursos;
@@ -25,11 +24,8 @@ namespace Sistema_de_Gestion_Universitaria.Clases
             _repoCursos = repoCursos ?? throw new ArgumentNullException(nameof(repoCursos));
         }
 
-        private static string Key(string idEstudiante, string codigoCurso)
-        {
-            return $"{idEstudiante?.Trim().ToUpper()}|{codigoCurso?.Trim().ToUpper()}";
-        }
-        public void MaricularEstudiante(Estudiante estudiante, Curso curso)
+
+        public void MatricularEstudiante(Estudiante estudiante, Curso curso)
         {
             if (estudiante == null) throw new ArgumentNullException(nameof(estudiante));
             if (curso == null) throw new ArgumentNullException(nameof(curso));
@@ -40,15 +36,15 @@ namespace Sistema_de_Gestion_Universitaria.Clases
             if (_repoCursos.BuscarPorId(curso.Codigo) == null)
                 throw new InvalidOperationException("El curso no esta registrado en el sistema");
 
-            var existe = _matriculas.Any(m =>
+
+            bool duplicado = _matriculas.Any(m =>
                 m.Estudiante.Identificacion.Equals(estudiante.Identificacion, StringComparison.OrdinalIgnoreCase) &&
                 m.Curso.Codigo.Equals(curso.Codigo, StringComparison.OrdinalIgnoreCase));
 
-            if (existe)
-                throw new InvalidOperationException("El estudiante ya esta matriculado en ese curso");
+            if (duplicado) throw new InvalidOperationException("Ya está matriculado en ese curso");
 
-            var nueva = new Matricula(estudiante, curso, DateTime.Now);
-            _matriculas.Add(nueva);
+            _matriculas.Add(new Matricula(estudiante, curso, DateTime.Today));
+
         }
 
         public void AgregarCalificacion(string idEstudiante, string codigoCurso, decimal calificacion)
@@ -94,7 +90,7 @@ namespace Sistema_de_Gestion_Universitaria.Clases
 
 
         }
-        public string GenerarReporteMatriculas(string idEstudiante)
+        public string GenerarReporteEstudiante(string idEstudiante)
         {
             var mats = ObtenerMatriculasPorEstudiante(idEstudiante);
             if (mats.Count == 0)
@@ -116,38 +112,13 @@ namespace Sistema_de_Gestion_Universitaria.Clases
                   .Select(v => v!.Value)
                   .ToList();
 
-            if (promedios.Count > 0)
-            {
-                var promedioGeneral = promedios.Average();
-                lineas.Add($"Promedio General: {promedioGeneral:0.00}");
-            }
-            else
-            {
-                lineas.Add("Promedio General: N/A (sin calificaciones) ");
-            }
+            lineas.Add(promedios.Count > 0 ? $"Promedio General: {promedios.Average():0.00}" : "Promedio General: N/A (sin calificaciones)");
 
             return string.Join(Environment.NewLine, lineas);
 
 
         }
 
-        public List<Matricula> ObtenerTodasLasMatriculas() => _matriculas.ToList();
-
-        private decimal PromedioGeneralDeEstudiante(string idEst)
-        {
-            var mats = _matriculas
-                .Where(m => m.Estudiante.Identificacion.Equals(idEst, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            var promedios = mats
-                .Select(m => m.Calificaciones.Count > 0 ? m.ObtenerPromedio() : (decimal?)null)
-                .Where(v => v.HasValue)
-                .Select(v => v!.Value)
-                .ToList();
-
-            return promedios.Count == 0 ? 0m : promedios.Average();
-
-        }
 
         public List<(Estudiante Estudiante, decimal Promedio)> ObtenerTop10Estudiantes()
         {
@@ -234,8 +205,7 @@ namespace Sistema_de_Gestion_Universitaria.Clases
 
         public List<(string Carrera, int Cantidad, decimal PromedioGeneral)> ObtenerEstadisticasPorCarrera()
         {
-            var query =
-                _matriculas
+           return _matriculas
                 .GroupBy(m => ObtenerCarrera(m.Estudiante))     
                 .Select(g =>
                 {
@@ -262,7 +232,6 @@ namespace Sistema_de_Gestion_Universitaria.Clases
                 .ThenByDescending(x => x.Cantidad)
                 .ToList();
 
-            return query;
         }
 
         public List<Estudiante> BuscarEstudiantes(Func<Estudiante, bool> criterio)

@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Sistema_de_Gestion_Universitaria.Interfaces;
+using Sistema_Gestion_Universitaria.Interfaces;
 
-namespace Sistema_de_Gestion_Universitaria.Clases
+namespace Sistema_Gestion_Universitaria.Clases
 {
     public enum TipoContrato
     {
-        Completo,
-        Amedias,
-        Contratados
-
+        TiempoCompleto, 
+        MedioTiempo, 
+        Adjunto
     }
     public class Profesor : Persona, IIdentificable
     {
         public string Departamento { get; set; }
+        public TipoContrato TipoContrato { get; set; }
         public decimal SalarioBase { get; set; }
 
         public string _Departamento
@@ -30,7 +30,7 @@ namespace Sistema_de_Gestion_Universitaria.Clases
             }
         }
 
-        public TipoContrato TipoContrato { get; set; }
+
         public decimal _SalarioBase
         {
             get => SalarioBase;
@@ -49,7 +49,7 @@ namespace Sistema_de_Gestion_Universitaria.Clases
 
         public Profesor(string identificacion, string nombre, string apellido, DateTime fechaNacimiento, string departamento, TipoContrato tipoContrato, decimal salarioBase)
         {
-            _indentificacion = identificacion;
+            _identificacion = identificacion;
             _nombre = nombre;
             _apellido = apellido;
             _fechaNacimiento = fechaNacimiento;

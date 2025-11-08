@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Sistema_de_Gestion_Universitaria.Interfaces;
+using Sistema_Gestion_Universitaria.Interfaces;
 
-namespace Sistema_de_Gestion_Universitaria.Clases
+namespace Sistema_Gestion_Universitaria.Clases
 {
     public class Matricula : IEvaluable
     {
@@ -13,6 +13,11 @@ namespace Sistema_de_Gestion_Universitaria.Clases
         public Curso Curso { get; set; }
         public DateTime FechaMatricula { get; set; }
         public List<decimal> Calificaciones { get; } = new List<decimal>();
+
+        public Matricula()
+        {
+
+        }
 
         public Matricula(Estudiante estudiante, Curso curso, DateTime fechaMatricula)
         {

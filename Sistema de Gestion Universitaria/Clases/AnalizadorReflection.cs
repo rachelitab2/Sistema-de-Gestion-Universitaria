@@ -5,11 +5,13 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Sistema_de_Gestion_Universitaria.Clases
+namespace Sistema_Gestion_Universitaria.Clases
 {
     public static class AnalizadorReflection
     {
-        public static string MostrarPrpiedades(Type tipo)
+        
+
+    public static string MostrarPropiedades(Type tipo)
 
         {
             if (tipo == null) throw new ArgumentNullException(nameof(tipo));
@@ -51,7 +53,7 @@ namespace Sistema_de_Gestion_Universitaria.Clases
 
         }
 
-        public static object CrearInstancia(Type tipo, params object[] parametros)
+        public static object CrearInstanciaDinamica(Type tipo, params object[] parametros)
         {
             if (tipo == null)
                 throw new ArgumentNullException(nameof(tipo));

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Sistema_de_Gestion_Universitaria.Interfaces;
+using Sistema_Gestion_Universitaria.Interfaces;
 
-namespace Sistema_de_Gestion_Universitaria.Clases
+namespace Sistema_Gestion_Universitaria.Clases
 {
     public class Repositorio<T> where T : IIdentificable
     {
@@ -52,6 +52,7 @@ namespace Sistema_de_Gestion_Universitaria.Clases
             return _items.Values.Where(predicado).ToList();
         }
 
+        public List<T> ObtenerTodos() => _items.Values.ToList();
     }
 
 

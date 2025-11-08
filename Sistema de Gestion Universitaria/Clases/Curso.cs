@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Sistema_de_Gestion_Universitaria.Interfaces;
+using Sistema_Gestion_Universitaria.Interfaces;
 
-namespace Sistema_de_Gestion_Universitaria.Clases
+namespace Sistema_Gestion_Universitaria.Clases
 {
     public class Curso : IIdentificable
     {
         public string Codigo { get; set; }
         public string Nombre { get; set; }
-
         public int Credito { get; set; }
 
         public string _Codigo
